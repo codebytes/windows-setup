@@ -71,9 +71,12 @@ $ErrorColor = "Red"
 function Write-SectionHeader {
     param([string]$Title)
     Write-Host ""
-    Write-Host ("=" * 60) -ForegroundColor $InfoColor
-    Write-Host " $Title" -ForegroundColor $InfoColor
-    Write-Host ("=" * 60) -ForegroundColor $InfoColor
+    Write-Host ("+" + ("-" * 58) + "+") -ForegroundColor $InfoColor
+    $padding = [math]::Max(0, 58 - $Title.Length) / 2
+    $leftPadding = [math]::Floor($padding)
+    $rightPadding = [math]::Ceiling($padding)
+    Write-Host ("|" + (" " * $leftPadding) + $Title + (" " * $rightPadding) + "|") -ForegroundColor $InfoColor
+    Write-Host ("+" + ("-" * 58) + "+") -ForegroundColor $InfoColor
 }
 
 function Write-StepInfo {
