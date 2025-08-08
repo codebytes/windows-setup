@@ -13,11 +13,17 @@
     - Visual Studio Community
     - GitHub CLI
     - GitHub Desktop
+    - Git
     - Docker Desktop
     - .NET SDK
     - Python
     - Node.js (includes npm)
     - LinqPad
+    - PowerShell (latest version)
+    - Azure CLI
+    - Azure Developer CLI
+    - Oh My Posh
+    - Obsidian
     - Windows Subsystem for Linux (WSL)
 
     The script checks for existing installations and skips already installed tools.
@@ -246,6 +252,11 @@ function Install-DevelopmentTools {
             Args = ""
         },
         @{
+            Id = "Git.Git"
+            Name = "Git"
+            Args = ""
+        },
+        @{
             Id = "Docker.DockerDesktop"
             Name = "Docker Desktop"
             Args = ""
@@ -268,6 +279,31 @@ function Install-DevelopmentTools {
         @{
             Id = "LINQPad.LINQPad.7"
             Name = "LinqPad 7"
+            Args = ""
+        },
+        @{
+            Id = "Microsoft.PowerShell"
+            Name = "PowerShell (latest version)"
+            Args = ""
+        },
+        @{
+            Id = "Microsoft.AzureCLI"
+            Name = "Azure CLI"
+            Args = ""
+        },
+        @{
+            Id = "Microsoft.Azd"
+            Name = "Azure Developer CLI"
+            Args = ""
+        },
+        @{
+            Id = "JanDeDobbeleer.OhMyPosh"
+            Name = "Oh My Posh"
+            Args = ""
+        },
+        @{
+            Id = "Obsidian.Obsidian"
+            Name = "Obsidian"
             Args = ""
         }
     )
@@ -357,17 +393,23 @@ function Show-PostInstallationInfo {
     Write-Host "1. Restart your computer if prompted (especially for WSL)" -ForegroundColor $InfoColor
     Write-Host "2. Configure your development tools as needed" -ForegroundColor $InfoColor
     Write-Host "3. Sign in to GitHub Desktop and GitHub CLI" -ForegroundColor $InfoColor
-    Write-Host "4. Configure Docker Desktop" -ForegroundColor $InfoColor
-    Write-Host "5. Update Windows PATH if needed for command-line tools" -ForegroundColor $InfoColor
+    Write-Host "4. Sign in to Azure CLI and Azure Developer CLI" -ForegroundColor $InfoColor
+    Write-Host "5. Configure Docker Desktop" -ForegroundColor $InfoColor
+    Write-Host "6. Set up Oh My Posh theme for PowerShell" -ForegroundColor $InfoColor
+    Write-Host "7. Update Windows PATH if needed for command-line tools" -ForegroundColor $InfoColor
     Write-Host ""
     
     Write-Host "Useful Commands:" -ForegroundColor $InfoColor
     Write-Host "- Check installed versions: winget list" -ForegroundColor $InfoColor
     Write-Host "- Update all tools: winget upgrade --all" -ForegroundColor $InfoColor
     Write-Host "- GitHub CLI login: gh auth login" -ForegroundColor $InfoColor
+    Write-Host "- Azure CLI login: az login" -ForegroundColor $InfoColor
+    Write-Host "- Azure Developer CLI login: azd auth login" -ForegroundColor $InfoColor
     Write-Host "- Check Node.js/npm: node --version && npm --version" -ForegroundColor $InfoColor
     Write-Host "- Check Python: python --version" -ForegroundColor $InfoColor
     Write-Host "- Check .NET: dotnet --version" -ForegroundColor $InfoColor
+    Write-Host "- Check PowerShell: `$PSVersionTable.PSVersion" -ForegroundColor $InfoColor
+    Write-Host "- Configure Oh My Posh: oh-my-posh init pwsh | Invoke-Expression" -ForegroundColor $InfoColor
     Write-Host ""
     
     $restart = Read-Host "Do you want to restart your computer now? (Y/N)"

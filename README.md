@@ -51,11 +51,17 @@ iwr -useb https://raw.githubusercontent.com/codebytes/windows-setup/main/install
 - **Visual Studio Community 2022** - Full-featured IDE
 - **GitHub CLI** - Command-line interface for GitHub
 - **GitHub Desktop** - Git GUI client
+- **Git** - Distributed version control system
 - **Docker Desktop** - Containerization platform
 - **.NET 8 SDK** - .NET development framework
 - **Python 3.12** - Python programming language
 - **Node.js** - JavaScript runtime (includes npm)
 - **LinqPad 7** - .NET code scratchpad
+- **PowerShell** - Latest version of PowerShell
+- **Azure CLI** - Azure command-line interface
+- **Azure Developer CLI** - Azure Developer CLI for modern development workflows
+- **Oh My Posh** - PowerShell prompt theme engine
+- **Obsidian** - Knowledge management and note-taking
 - **WSL** - Windows Subsystem for Linux
 
 #### Features
