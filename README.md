@@ -21,6 +21,16 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.We
 
 **NEW:** Focused script for installing essential development tools using winget.
 
+#### Prerequisites
+
+**Important:** On a fresh Windows installation, you must run `winget` at least once before using this script to accept the license agreement and data collection terms. Simply run:
+
+```powershell
+winget --version
+```
+
+Follow the prompts to accept the agreements.
+
 #### Quick Installation
 
 ```powershell

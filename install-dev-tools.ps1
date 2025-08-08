@@ -43,6 +43,7 @@
 .NOTES
     - This script requires administrative privileges for some installations
     - Winget must be available on the system
+    - On fresh Windows installations, run 'winget --version' first to accept license agreements
     - Internet connection is required for downloads
 #>
 
@@ -70,9 +71,9 @@ $ErrorColor = "Red"
 function Write-SectionHeader {
     param([string]$Title)
     Write-Host ""
-    Write-Host "=" * 60 -ForegroundColor $InfoColor
+    Write-Host ("=" * 60) -ForegroundColor $InfoColor
     Write-Host " $Title" -ForegroundColor $InfoColor
-    Write-Host "=" * 60 -ForegroundColor $InfoColor
+    Write-Host ("=" * 60) -ForegroundColor $InfoColor
 }
 
 function Write-StepInfo {
