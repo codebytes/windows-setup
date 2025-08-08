@@ -156,13 +156,13 @@ function Install-WingetApp {
         [string]$AdditionalArgs = ""
     )
     
-    Write-StepInfo "Installing $AppName..."
-    
-    # Check if already installed
+    # Check if already installed first
     if (Test-AppInstalled -AppId $AppId) {
-        Write-StepWarning "$AppName is already installed. Skipping installation."
+        Write-StepSuccess "$AppName is already installed."
         return $true
     }
+    
+    Write-StepInfo "Installing $AppName..."
     
     try {
         $installArgs = "install --id=$AppId --exact --silent --accept-package-agreements --accept-source-agreements"
