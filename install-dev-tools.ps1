@@ -140,7 +140,7 @@ function Install-DevTools {
         @{ Id="Microsoft.DotNet.SDK.9";           Name=".NET 9 SDK"; WingetName="Microsoft.DotNet.SDK.9" }
         @{ Id="Python.Python.3.12";               Name="Python 3.12"; WingetName="Python.Python.3.12" }
         @{ Id="OpenJS.NodeJS";                    Name="Node.js (npm)"; WingetName="OpenJS.NodeJS" }
-        @{ Id="LINQPad.LINQPad.7";                Name="LinqPad 7"; WingetName="LINQPad.LINQPad.7" }
+        @{ Id="LINQPad.LINQPad.8";                Name="LinqPad 8"; WingetName="LINQPad.LINQPad.8" }
         @{ Id="Microsoft.PowerShell";             Name="PowerShell (latest)"; WingetName="Microsoft.PowerShell" }
         @{ Id="Microsoft.AzureCLI";               Name="Azure CLI"; WingetName="Microsoft.AzureCLI" }
         @{ Id="Microsoft.Azd";                    Name="Azure Developer CLI"; WingetName="Microsoft.Azd" }
