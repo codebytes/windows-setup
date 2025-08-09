@@ -72,15 +72,42 @@ function Section       { param($t) Write-Host "`n--- $t ---" -ForegroundColor $I
 
 function Test-Admin    { ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator") }
 function Test-Winget   { try { Get-Command winget -ErrorAction Stop | Out-Null; $true } catch { $false } }
-function Test-App      { param($id) try { winget list --id $id --exact 2>$null; $LASTEXITCODE -eq 0 } catch { $false } }
-function Install-App   {
-    param($id, $name, $args = "")
-    if (Test-App $id) { Write-OK "$name already installed."; return $true }
+function Test-App {
+    param($wingetName)
+    try {
+        $output = winget list --name $wingetName 2>$null
+        if ($output -match $wingetName) { return $true }
+    } catch {}
+    return $false
+}
+
+function Install-App {
+    param($id, $name, $wingetName, $extraArgs = "")
+    if (Test-App $wingetName) { Write-OK "$name already installed."; return $true }
     Write-Info "Installing $name..."
-    $installArgs = "install --id=$id --exact --silent --accept-package-agreements --accept-source-agreements $args"
-    $result = Start-Process -FilePath "winget" -ArgumentList $installArgs -Wait -PassThru -NoNewWindow
-    if ($result.ExitCode -eq 0) { Write-OK "$name installed."; return $true }
-    else { Write-ErrorX "$name failed (exit $($result.ExitCode))"; return $false }
+    $installArgs = @("install", "--id=$id", "--exact", "--silent", "--accept-package-agreements", "--accept-source-agreements")
+    if ($extraArgs) { $installArgs += $extraArgs }
+    $output = & winget @installArgs 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-OK "$name installed."; return $true
+    }
+    # Treat all known benign messages as success
+    $benign = @(
+        'already installed',
+        'No available upgrade found',
+        'No newer package versions are available',
+        'No package found matching input criteria',
+        'is up to date',
+        'is installed and up to date',
+        'Nothing to do.'
+    )
+    foreach ($msg in $benign) {
+        if ($output -match [regex]::Escape($msg)) {
+            Write-OK "$name already installed or up to date."; return $true
+        }
+    }
+    # Only print error for true failures
+    Write-ErrorX "$name failed (exit $LASTEXITCODE): $output"; return $false
 }
 
 # -----------------------------------------------------------------------------
@@ -101,30 +128,42 @@ function Initialize {
 function Install-DevTools {
     Section "Installing Development Tools"
     $tools = @(
-        @{ Id="Microsoft.VisualStudioCode";        Name="Visual Studio Code" }
-        @{ Id="Microsoft.VisualStudio.2022.Enterprise"; Name="Visual Studio 2022 Enterprise" }
-        @{ Id="GitHub.cli";                       Name="GitHub CLI" }
-        @{ Id="GitHub.GitHubDesktop";             Name="GitHub Desktop" }
-        @{ Id="Git.Git";                          Name="Git" }
-        @{ Id="Docker.DockerDesktop";             Name="Docker Desktop" }
-        @{ Id="Microsoft.DotNet.SDK.8";           Name=".NET 8 SDK" }
-        @{ Id="Microsoft.DotNet.SDK.9";           Name=".NET 9 SDK" }
-        @{ Id="Python.Python.3.12";               Name="Python 3.12" }
-        @{ Id="OpenJS.NodeJS";                    Name="Node.js (npm)" }
-        @{ Id="LINQPad.LINQPad.7";                Name="LinqPad 7" }
-        @{ Id="Microsoft.PowerShell";             Name="PowerShell (latest)" }
-        @{ Id="Microsoft.AzureCLI";               Name="Azure CLI" }
-        @{ Id="Microsoft.Azd";                    Name="Azure Developer CLI" }
-        @{ Id="JanDeDobbeleer.OhMyPosh";          Name="Oh My Posh" }
-        @{ Id="Obsidian.Obsidian";                Name="Obsidian" }
+        @{ Id="Microsoft.VisualStudioCode";        Name="Visual Studio Code"; WingetName="Microsoft.VisualStudioCode" }
+        @{ Id="Microsoft.VisualStudio.2022.Enterprise"; Name="Visual Studio 2022 Enterprise"; WingetName="Microsoft.VisualStudio.2022.Enterprise" }
+        @{ Id="JetBrains.Toolbox";                Name="JetBrains Toolbox"; WingetName="jetbrains.toolbox" }
+        @{ Id="MartiCliment.UniGetUI";                Name="UniGetUI"; WingetName="MartiCliment.UniGetUI" }
+        @{ Id="GitHub.cli";                       Name="GitHub CLI"; WingetName="GitHub.cli" }
+        @{ Id="GitHub.GitHubDesktop";             Name="GitHub Desktop"; WingetName="GitHub.GitHubDesktop" }
+        @{ Id="Git.Git";                          Name="Git"; WingetName="Git.Git" }
+        @{ Id="Docker.DockerDesktop";             Name="Docker Desktop"; WingetName="Docker.DockerDesktop" }
+        @{ Id="Microsoft.DotNet.SDK.8";           Name=".NET 8 SDK"; WingetName="Microsoft.DotNet.SDK.8" }
+        @{ Id="Microsoft.DotNet.SDK.9";           Name=".NET 9 SDK"; WingetName="Microsoft.DotNet.SDK.9" }
+        @{ Id="Python.Python.3.12";               Name="Python 3.12"; WingetName="Python.Python.3.12" }
+        @{ Id="OpenJS.NodeJS";                    Name="Node.js (npm)"; WingetName="OpenJS.NodeJS" }
+        @{ Id="LINQPad.LINQPad.7";                Name="LinqPad 7"; WingetName="LINQPad.LINQPad.7" }
+        @{ Id="Microsoft.PowerShell";             Name="PowerShell (latest)"; WingetName="Microsoft.PowerShell" }
+        @{ Id="Microsoft.AzureCLI";               Name="Azure CLI"; WingetName="Microsoft.AzureCLI" }
+        @{ Id="Microsoft.Azd";                    Name="Azure Developer CLI"; WingetName="Microsoft.Azd" }
+        @{ Id="JanDeDobbeleer.OhMyPosh";          Name="Oh My Posh"; WingetName="JanDeDobbeleer.OhMyPosh" }
+        @{ Id="Obsidian.Obsidian";                Name="Obsidian"; WingetName="Obsidian.Obsidian" }
     )
     $ok = 0; $total = $tools.Count
-    foreach ($t in $tools) { if (Install-App $t.Id $t.Name) { $ok++ }; Write-Host "" }
+    foreach ($t in $tools) { if (Install-App $t.Id $t.Name $t.WingetName) { $ok++ }; Write-Host "" }
     Section "Summary"
     Write-Host "$ok of $total tools installed." -ForegroundColor $InfoColor
     if ($ok -eq $total) { Write-OK "All tools installed." }
     elseif ($ok -gt 0) { Write-Warn "$($total - $ok) failed." }
     else { Write-ErrorX "No tools installed." }
+
+    Section "Validation"
+    foreach ($t in $tools) {
+        $result = winget list --id $t.Id 2>$null
+        if ($result -match $t.Id) {
+            Write-OK "$($t.Name) is installed."
+        } else {
+            Write-ErrorX "$($t.Name) is NOT installed!"
+        }
+    }
 }
 
 function Install-WSL {
@@ -160,8 +199,7 @@ function PostInstall {
     Write-Host "- $PSVersionTable.PSVersion"
     Write-Host "- oh-my-posh init pwsh | Invoke-Expression"
     Write-Host ""
-    $restart = Read-Host "Restart computer now? (Y/N)"
-    if ($restart -match "^y") { Restart-Computer }
+    # No reboot at the end
 }
 
 # -----------------------------------------------------------------------------
