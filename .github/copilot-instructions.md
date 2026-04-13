@@ -2,211 +2,121 @@
 
 **ALWAYS follow these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
-This repository contains PowerShell scripts for automated Windows 11 system setup and developer tooling. The main script removes bloatware, installs applications, configures security settings, sets up WSL, and supports list-driven presets and option IDs so the setup is easy to customize.
+This repository uses **WinGet DSC** (Desired State Configuration) for automated Windows 11 system setup. The setup is declarative — a YAML file describes the desired machine state and WinGet applies it idempotently.
 
 ## Critical Platform Requirements
 
-- **Windows 11 ONLY**: This script is designed exclusively for Windows 11 systems
-- **DO NOT attempt to run this script on Linux, macOS, or other platforms** - it will fail
+- **Windows 11 ONLY**: Designed exclusively for Windows 11 systems
+- **DO NOT attempt to run on Linux, macOS, or other platforms** - it will fail
 - **PowerShell 5.1+ required**: Script uses Windows-specific PowerShell cmdlets
-- **Administrator privileges required**: Script automatically self-elevates to admin
+- **Administrator privileges required**: `boot.ps1` automatically self-elevates
 
 ## Repository Structure
 
 ```
-/home/runner/work/windows-setup/windows-setup/
-├── README.md               # Project documentation
-├── script.ps1              # Main Windows 11 setup entrypoint with presets/options
-├── install-dev-tools.ps1   # Thin wrapper for the DevTools preset
-└── .github/
-    └── copilot-instructions.md  # This file
+├── boot.ps1                  # Bootstrapper: admin elevation → WinGet repair → DSC run
+├── codebytes.dev.dsc.yml     # Declarative DSC config (packages, settings, scripts)
+├── codebytes.omp.json        # Oh My Posh prompt theme
+├── clone-repos.ps1           # Clone personal GitHub repos via gh CLI
+├── .vsconfig                 # Visual Studio workload/component selection
+└── README.md
 ```
 
 ## Working Effectively
 
-### Syntax Validation (Linux/Non-Windows environments)
-When working on non-Windows systems, you can validate PowerShell syntax:
-
+### Syntax Validation
 ```bash
-# Validate PowerShell syntax (works on Linux with pwsh installed)
-cd /home/runner/work/windows-setup/windows-setup
-pwsh -Command "\$script = Get-Content script.ps1 -Raw; [System.Management.Automation.PSParser]::Tokenize(\$script, [ref]\$null) | Out-Null; Write-Host 'PowerShell syntax is valid'"
+pwsh -Command "\$script = Get-Content boot.ps1 -Raw; [System.Management.Automation.PSParser]::Tokenize(\$script, [ref]\$null) | Out-Null; Write-Host 'PowerShell syntax is valid'"
 ```
-
-**NEVER CANCEL** - Syntax validation completes in under 5 seconds.
 
 ### Script Execution (Windows environments only)
 
 ```powershell
 # Method 1: Direct execution (requires Administrator PowerShell)
 Set-ExecutionPolicy Bypass -Scope Process -Force
-.\script.ps1
+.\boot.ps1
 
 # Method 2: Remote execution from GitHub (as documented in README)
-Set-ExecutionPolicy Bypass -Scope Process -Force; $script = Join-Path $env:TEMP 'windows-setup.ps1'; irm 'https://raw.githubusercontent.com/codebytes/windows-setup/main/script.ps1' | Set-Content -Path $script -Encoding UTF8; & $script -NonInteractive
+Set-ExecutionPolicy Bypass -Scope Process -Force; $script = Join-Path $env:TEMP 'windows-setup-boot.ps1'; irm 'https://raw.githubusercontent.com/codebytes/windows-setup/main/boot.ps1' | Set-Content -Path $script -Encoding UTF8; & $script
 ```
 
-**NEVER CANCEL** - Full script execution takes 15-30 minutes depending on internet speed and system performance. Set timeout to 45+ minutes.
+**NEVER CANCEL** - Full execution takes 15-30 minutes. Set timeout to 45+ minutes.
 
-## Manual Validation Requirements
+## How It Works
 
-### On Windows Systems
-After running the script, ALWAYS validate these scenarios:
+`boot.ps1` is the main entrypoint. It:
 
-1. **Application Installation Verification**:
-   ```powershell
-   # Verify winget installations completed
-   winget list Git.Git
-   winget list Google.Chrome
-   winget list Microsoft.VisualStudioCode
-   winget list JanDeDobbeleer.OhMyPosh
-   ```
+1. Self-elevates to Administrator
+2. Ensures WinGet is installed and up to date
+3. Enables `winget configure`
+4. Runs `winget configure -f codebytes.dev.dsc.yml --accept-configuration-agreements`
 
-2. **UWP App Removal Verification**:
-   ```powershell
-   # Check that bloatware was removed
-   Get-AppxPackage | Where-Object {$_.Name -like "*Disney*" -or $_.Name -like "*BingNews*" -or $_.Name -like "*Solitaire*"}
-   # Should return no results if successful
-   ```
+The DSC YAML (`codebytes.dev.dsc.yml`) declares all packages, settings, and scripts:
 
-3. **WSL Installation Verification**:
-   ```powershell
-   # Verify WSL is installed
-   wsl --status
-   wsl --list --online
-   ```
-
-4. **Registry Settings Verification**:
-   ```powershell
-   # Check autoplay disabled
-   Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers" -Name "DisableAutoplay"
-   
-   # Check autorun disabled
-   Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun"
-   ```
-
-### On Non-Windows Systems
-Since the script cannot be executed:
-
-1. **Syntax Validation**: Use the pwsh command shown above
-2. **Code Review**: Manually review script.ps1 for logical errors
-3. **Documentation Review**: Ensure README.md matches script functionality
-
-## Script Functionality Overview
-
-The main `script.ps1` entrypoint supports two presets:
-
-1. **Full** - Full Windows setup for a fresh machine
-2. **DevTools** - Development tools only
-
-The `Full` preset performs these operations in sequence:
-
-1. **Self-elevation to Administrator** (automatic)
-2. **UWP App Removal** (~2 minutes):
-   - Disney.37853FC22B2CE
-   - Microsoft.BingNews, GetHelp, Getstarted
-   - Microsoft.MicrosoftSolitaireCollection, MicrosoftOfficeHub
-   - Microsoft.WindowsFeedbackHub
-   - SpotifyAB.SpotifyMusic
-3. **Winget Installation** (~3 minutes) - if not present
-4. **Application Installation** (~10-15 minutes):
-   - Git for Windows, Google Chrome
-   - Oh My Posh, PowerToys, Visual Studio Code
-   - Postman, Slack, QuickLook
-5. **Security Configuration** (~1 minute):
-   - Enable PUA Protection in Windows Defender
-6. **System Configuration** (~1 minute):
-   - Disable Autoplay and Autorun
-   - Disable Windows Update P2P optimization
-7. **WSL Installation** (~5-10 minutes)
-8. **Nerd Font Installation** (~2 minutes)
-9. **System Restart** (required)
-
-**NEVER CANCEL** any of these operations - the script includes interactive prompts and automatic retries.
+- **Packages**: 30+ WinGet packages via `Microsoft.WinGet.DSC/WinGetPackage` resources
+- **Windows Settings**: via `Microsoft.Windows.Developer/*` resources
+- **Custom Actions**: bloatware removal, security hardening, profile setup via `PSDscResources/Script` blocks
+- **Dev Drive**: 50 GB ReFS volume on D: via `StorageDsc/Disk`
 
 ## Common Modification Tasks
 
 ### Adding New Applications
-To add applications to the winget installation list:
-
 1. Find the winget package ID: `winget search "App Name"`
-2. Add a new package entry to the `$OptionCatalog` hashtable in `script.ps1`
-3. Add the new option ID to the preset list you want inside `$PresetCatalog`
-   ```powershell
-   'new-app' = @{
-     Type        = 'Package'
-     Name        = 'New App'
-     Description = 'Install New App.'
-     WingetId    = 'NewVendor.NewApp'
-   }
+2. Add a new `WinGetPackage` resource to `codebytes.dev.dsc.yml`:
+   ```yaml
+       - resource: Microsoft.WinGet.DSC/WinGetPackage
+         id: myapp
+         directives:
+           description: Install My App
+           allowPrerelease: true
+         settings:
+           id: Vendor.AppId
+           source: winget
    ```
 
 ### Adding UWP Apps for Removal
-To remove additional UWP bloatware:
+1. List installed UWP apps: `Get-AppxPackage | Select-Object Name | Sort-Object Name`
+2. Add the Name to the package list in the `RemoveBloatware` script block inside `codebytes.dev.dsc.yml`
 
-1. List installed UWP apps: `Get-AppxPackage | Format-Table -Property Name,Version,PackageFullName`
-2. Add the Name to the `$packagesToRemove` list inside `Invoke-RemoveBuiltInApps` in `script.ps1`
+### Changing Visual Studio Workloads
+Edit `.vsconfig` — the DSC configuration applies it after VS installs.
 
-### Modifying Registry Settings
-Always test registry changes on a virtual machine first:
+### Changing the Oh My Posh Theme
+Edit `codebytes.omp.json` — downloaded during DSC profile setup.
 
-1. Use `Test-Path` to check if registry key exists
-2. Use `New-Item` to create missing registry paths
-3. Use `Set-ItemProperty` to modify values
+### Adding Repos to Clone
+Edit the `$repos` array in `clone-repos.ps1`.
 
 ## Validation Checklist
 
-Before committing changes to script.ps1:
+Before committing changes:
 
-- [ ] Validate PowerShell syntax using pwsh command
-- [ ] Review all registry paths for typos
-- [ ] Verify all winget package IDs exist: `winget search "package.id"`
+- [ ] Validate PowerShell syntax: `pwsh -Command "...Tokenize..."`
+- [ ] Validate YAML syntax: `python -c "import yaml; yaml.safe_load(open('codebytes.dev.dsc.yml'))"`
+- [ ] Verify winget package IDs exist: `winget search "package.id"`
+- [ ] Validate JSON files: `python -c "import json; json.load(open('codebytes.omp.json'))"`
 - [ ] Test on Windows 11 VM if possible
 - [ ] Update README.md if functionality changes
-- [ ] Ensure script maintains self-elevation logic
 
 ## Limitations in Non-Windows Environments
 
 **DO NOT attempt these operations on Linux/macOS**:
-- Running script.ps1 directly
+- Running boot.ps1 directly
 - Testing winget commands
 - Testing Windows registry modifications
 - Testing Windows Defender settings
 - Testing WSL installation
-- Testing UWP app removal
 
 **You CAN do these operations**:
 - Syntax validation with pwsh
+- YAML/JSON validation with python
 - Code review and logical analysis
 - Documentation updates
-- File structure modifications
-
-## Error Handling
-
-The script includes built-in error handling:
-- Self-elevation for admin privileges
-- Conditional installation (checks if apps already exist)
-- Interactive prompts for manual intervention
-- Automatic retry mechanisms for network operations
-
-When modifying the script, maintain these patterns:
-```powershell
-# Check if command exists before using
-if (Test-CommandAvailable -CommandName 'commandname') {
-  # Command exists logic
-} else {
-  # Installation logic
-}
-
-# Set registry values through the helper that creates the path when needed
-Set-RegistryDwordValue -Path 'HKLM:\Path\To\Key' -Name 'ValueName' -Value 1
-```
 
 ## Time Expectations
 
 - **Syntax validation**: 5 seconds
-- **Full script execution**: 15-30 minutes (Windows only)
+- **Full execution**: 15-30 minutes (Windows only)
 - **Manual verification**: 5-10 minutes (Windows only)
-- **Code review**: 10-15 minutes (any platform)
 
-**CRITICAL**: Always set timeouts of 45+ minutes for full script execution and 60+ minutes if including verification steps.
+**CRITICAL**: Always set timeouts of 45+ minutes for full script execution.

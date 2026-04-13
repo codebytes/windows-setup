@@ -83,8 +83,6 @@ Restart-Computer
 ├── codebytes.omp.json        # Oh My Posh prompt theme
 ├── clone-repos.ps1           # Clone personal GitHub repos via gh CLI
 ├── .vsconfig                 # Visual Studio workload/component selection
-├── script.ps1                # Backward-compat wrapper (delegates to boot.ps1)
-├── install-dev-tools.ps1     # Backward-compat wrapper (delegates to boot.ps1)
 └── README.md
 ```
 
@@ -128,15 +126,6 @@ Edit the package names in the `RemoveBloatware` script block inside `codebytes.d
 
 ```powershell
 Get-AppxPackage | Select-Object Name | Sort-Object Name
-```
-
-## Backward Compatibility
-
-The original one-liner URLs still work. Both `script.ps1` and `install-dev-tools.ps1` now delegate to `boot.ps1`:
-
-```powershell
-# These still work — they fetch and run boot.ps1 under the hood
-Set-ExecutionPolicy Bypass -Scope Process -Force; $script = Join-Path $env:TEMP 'windows-setup.ps1'; irm 'https://raw.githubusercontent.com/codebytes/windows-setup/main/script.ps1' | Set-Content -Path $script -Encoding UTF8; & $script
 ```
 
 ## Requirements
