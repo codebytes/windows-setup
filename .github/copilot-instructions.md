@@ -1,8 +1,8 @@
-# Windows 11 Setup Script
+# Windows 11 Setup Scripts
 
 **ALWAYS follow these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
-This repository contains a PowerShell script for automated Windows 11 system setup and configuration. The script removes bloatware, installs essential applications, configures security settings, and sets up WSL.
+This repository contains PowerShell scripts for automated Windows 11 system setup and developer tooling. The main script removes bloatware, installs applications, configures security settings, sets up WSL, and supports list-driven presets and option IDs so the setup is easy to customize.
 
 ## Critical Platform Requirements
 
@@ -15,8 +15,9 @@ This repository contains a PowerShell script for automated Windows 11 system set
 
 ```
 /home/runner/work/windows-setup/windows-setup/
-├── README.md           # Project documentation
-├── script.ps1         # Main Windows 11 setup script
+├── README.md               # Project documentation
+├── script.ps1              # Main Windows 11 setup entrypoint with presets/options
+├── install-dev-tools.ps1   # Thin wrapper for the DevTools preset
 └── .github/
     └── copilot-instructions.md  # This file
 ```
@@ -42,7 +43,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 .\script.ps1
 
 # Method 2: Remote execution from GitHub (as documented in README)
-Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/samuelramox/windows-setup/master/script.ps1'))
+Set-ExecutionPolicy Bypass -Scope Process -Force; $script = Join-Path $env:TEMP 'windows-setup.ps1'; irm 'https://raw.githubusercontent.com/codebytes/windows-setup/main/script.ps1' | Set-Content -Path $script -Encoding UTF8; & $script -NonInteractive
 ```
 
 **NEVER CANCEL** - Full script execution takes 15-30 minutes depending on internet speed and system performance. Set timeout to 45+ minutes.
@@ -93,7 +94,12 @@ Since the script cannot be executed:
 
 ## Script Functionality Overview
 
-The script performs these operations in sequence:
+The main `script.ps1` entrypoint supports two presets:
+
+1. **Full** - Full Windows setup for a fresh machine
+2. **DevTools** - Development tools only
+
+The `Full` preset performs these operations in sequence:
 
 1. **Self-elevation to Administrator** (automatic)
 2. **UWP App Removal** (~2 minutes):
@@ -124,21 +130,22 @@ The script performs these operations in sequence:
 To add applications to the winget installation list:
 
 1. Find the winget package ID: `winget search "App Name"`
-2. Add to the `$Apps` array in script.ps1:
+2. Add a new package entry to the `$OptionCatalog` hashtable in `script.ps1`
+3. Add the new option ID to the preset list you want inside `$PresetCatalog`
    ```powershell
-   $Apps= @(
-     "Google.Chrome",
-     "JanDeDobbeleer.OhMyPosh",
-     # ... existing apps ...
-     "NewVendor.NewApp"  # Add here
-   )
+   'new-app' = @{
+     Type        = 'Package'
+     Name        = 'New App'
+     Description = 'Install New App.'
+     WingetId    = 'NewVendor.NewApp'
+   }
    ```
 
 ### Adding UWP Apps for Removal
 To remove additional UWP bloatware:
 
 1. List installed UWP apps: `Get-AppxPackage | Format-Table -Property Name,Version,PackageFullName`
-2. Add the Name to `$uwpRubbishApps` array in script.ps1
+2. Add the Name to the `$packagesToRemove` list inside `Invoke-RemoveBuiltInApps` in `script.ps1`
 
 ### Modifying Registry Settings
 Always test registry changes on a virtual machine first:
@@ -185,16 +192,14 @@ The script includes built-in error handling:
 When modifying the script, maintain these patterns:
 ```powershell
 # Check if command exists before using
-if (Check-Command -cmdname 'commandname') {
+if (Test-CommandAvailable -CommandName 'commandname') {
   # Command exists logic
 } else {
   # Installation logic
 }
 
-# Test registry paths before modification
-If (!(Test-Path "HKLM:\Path\To\Key")) {
-  New-Item -Path "HKLM:\Path\To\Key" | Out-Null
-}
+# Set registry values through the helper that creates the path when needed
+Set-RegistryDwordValue -Path 'HKLM:\Path\To\Key' -Name 'ValueName' -Value 1
 ```
 
 ## Time Expectations
