@@ -131,7 +131,7 @@ properties:
         source: winget
 
     - resource: Microsoft.WinGet.DSC/WinGetPackage
-      id: dotnet9
+      id: dotnet10
       directives:
         description: Install .NET 10 SDK
         allowPrerelease: true
