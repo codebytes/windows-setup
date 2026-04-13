@@ -1,15 +1,21 @@
+$scriptPath = $PSCommandPath
+
 $mainFunction = {
-    $mypath = $MyInvocation.MyCommand.Path
-    Write-Output "Path of the script: $mypath"
+    Write-Output "Path of the script: $scriptPath"
+
+    if (-not $scriptPath) {
+        Write-Host "ERROR: Script must be run from a file, not piped input. Save to a file first." -ForegroundColor Red
+        exit 1
+    }
 
     $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
     if (!$isAdmin) {
         # Shoulder tap terminal so it gets registered
-        Start-Process shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App
+        Start-Process shell:AppsFolder\Microsoft.WindowsTerminal_8wekyb3d8bbwe!App -ErrorAction SilentlyContinue
 
         Write-Host "Restarting as Administrator..."
-        Start-Process PowerShell -Wait -Verb RunAs "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; & '$mypath';`""
+        Start-Process PowerShell -Wait -Verb RunAs "-NoProfile -ExecutionPolicy Bypass -Command `"cd '$pwd'; & '$scriptPath';`""
         exit
     }
     else {
