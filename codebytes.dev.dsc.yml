@@ -131,6 +131,15 @@ properties:
         source: winget
 
     - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: dotnet9
+      directives:
+        description: Install .NET 10 SDK
+        allowPrerelease: true
+      settings:
+        id: Microsoft.DotNet.SDK.10
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: python
       directives:
         description: Install Python 3.12
@@ -217,15 +226,6 @@ properties:
 # Dev Tools
 # ─────────────────────────────────────────────
     - resource: Microsoft.WinGet.DSC/WinGetPackage
-      id: jetbrainstoolbox
-      directives:
-        description: Install JetBrains Toolbox
-        allowPrerelease: true
-      settings:
-        id: JetBrains.Toolbox
-        source: winget
-
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: unigetui
       directives:
         description: Install UniGetUI
@@ -261,24 +261,6 @@ properties:
         id: Microsoft.Azd
         source: winget
 
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      id: postman
-      directives:
-        description: Install Postman
-        allowPrerelease: true
-      settings:
-        id: Postman.Postman
-        source: winget
-
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      id: obsidian
-      directives:
-        description: Install Obsidian
-        allowPrerelease: true
-      settings:
-        id: Obsidian.Obsidian
-        source: winget
-
 # ─────────────────────────────────────────────
 # Daily Apps
 # ─────────────────────────────────────────────
@@ -289,24 +271,6 @@ properties:
         allowPrerelease: true
       settings:
         id: Google.Chrome
-        source: winget
-
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      id: slack
-      directives:
-        description: Install Slack
-        allowPrerelease: true
-      settings:
-        id: SlackTechnologies.Slack
-        source: winget
-
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
-      id: quicklook
-      directives:
-        description: Install QuickLook
-        allowPrerelease: true
-      settings:
-        id: QL-Win.QuickLook
         source: winget
 
     - resource: Microsoft.WinGet.DSC/WinGetPackage
