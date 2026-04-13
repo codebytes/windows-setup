@@ -1,0 +1,533 @@
+# yaml-language-server: $schema=https://aka.ms/configuration-dsc-schema/0.2
+# codebytes Dev Machine Setup
+properties:
+  configurationVersion: 0.2.0
+  resources:
+
+# ─────────────────────────────────────────────
+# Dev Drive (D:, 50 GB, ReFS)
+# Only created when disk 0 has unallocated space and D: does not already exist.
+# ─────────────────────────────────────────────
+    - resource: Disk
+      id: DevDrive
+      directives:
+        module: StorageDsc
+        description: 'Create Dev Drive on D:'
+        allowPrerelease: true
+      settings:
+        DiskId: '0'
+        DiskIdType: 'Number'
+        DriveLetter: 'D'
+        FSLabel: 'Dev Drive'
+        DevDrive: true
+        AllowDestructive: false
+        FSFormat: 'ReFS'
+        Size: '50Gb'
+
+# ─────────────────────────────────────────────
+# Git and GitHub tools
+# ─────────────────────────────────────────────
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: git
+      directives:
+        description: Install Git
+        allowPrerelease: true
+      settings:
+        id: Git.Git
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: githubcli
+      dependsOn:
+        - git
+      directives:
+        description: Install GitHub CLI
+        allowPrerelease: true
+      settings:
+        id: GitHub.cli
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: githubdesktop
+      directives:
+        description: Install GitHub Desktop
+        allowPrerelease: true
+      settings:
+        id: GitHub.GitHubDesktop
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: githubcopilot
+      dependsOn:
+        - githubcli
+      directives:
+        description: Install GitHub Copilot CLI
+        allowPrerelease: true
+      settings:
+        id: GitHub.copilot
+        source: winget
+
+# ─────────────────────────────────────────────
+# Editors
+# ─────────────────────────────────────────────
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: vscode
+      directives:
+        description: Install Visual Studio Code
+        allowPrerelease: true
+      settings:
+        id: Microsoft.VisualStudioCode
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: visualstudio
+      directives:
+        description: Install Visual Studio Community 2022
+        allowPrerelease: true
+      settings:
+        id: Microsoft.VisualStudio.2022.Community
+        source: winget
+
+    - resource: PSDscResources/Script
+      id: visualstudioworkloads
+      dependsOn:
+        - visualstudio
+      directives:
+        description: Configure Visual Studio workloads from .vsconfig
+        allowPrerelease: true
+      settings:
+        GetScript: |
+          @{ Result = $true }
+        TestScript: |
+          return $false
+        SetScript: |
+          $vsConfigUrl = "https://raw.githubusercontent.com/codebytes/windows-setup/main/.vsconfig"
+          $vsConfigPath = "$env:TEMP\.vsconfig"
+          Invoke-WebRequest -Uri $vsConfigUrl -OutFile $vsConfigPath
+          $vsInstallerPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+          if (Test-Path $vsInstallerPath) {
+            & $vsInstallerPath modify --installPath "${env:ProgramFiles}\Microsoft Visual Studio\2022\Community" --config $vsConfigPath --quiet
+          }
+
+# ─────────────────────────────────────────────
+# Runtimes and SDKs
+# ─────────────────────────────────────────────
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: dotnet8
+      directives:
+        description: Install .NET 8 SDK
+        allowPrerelease: true
+      settings:
+        id: Microsoft.DotNet.SDK.8
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: dotnet9
+      directives:
+        description: Install .NET 9 SDK
+        allowPrerelease: true
+      settings:
+        id: Microsoft.DotNet.SDK.9
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: python
+      directives:
+        description: Install Python 3.12
+        allowPrerelease: true
+      settings:
+        id: Python.Python.3.12
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: nodejs
+      directives:
+        description: Install Node.js
+        allowPrerelease: true
+      settings:
+        id: OpenJS.NodeJS
+        source: winget
+
+# ─────────────────────────────────────────────
+# Containers
+# ─────────────────────────────────────────────
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: docker
+      directives:
+        description: Install Docker Desktop
+        allowPrerelease: true
+      settings:
+        id: Docker.DockerDesktop
+        source: winget
+
+# ─────────────────────────────────────────────
+# Terminal and Shell
+# ─────────────────────────────────────────────
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: windowsterminal
+      directives:
+        description: Install Windows Terminal
+        allowPrerelease: true
+      settings:
+        id: Microsoft.WindowsTerminal
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: powershell
+      directives:
+        description: Install PowerShell 7
+        allowPrerelease: true
+      settings:
+        id: Microsoft.PowerShell
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: ohmyposh
+      directives:
+        description: Install Oh My Posh
+        allowPrerelease: true
+      settings:
+        id: JanDeDobbeleer.OhMyPosh
+        source: winget
+
+# ─────────────────────────────────────────────
+# WSL and Linux
+# ─────────────────────────────────────────────
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: wsl
+      directives:
+        description: Install WSL
+        allowPrerelease: true
+      settings:
+        id: Microsoft.WSL
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: ubuntu
+      dependsOn:
+        - wsl
+      directives:
+        description: Install Ubuntu
+        allowPrerelease: true
+      settings:
+        id: Canonical.Ubuntu.2404
+        source: winget
+
+# ─────────────────────────────────────────────
+# Dev Tools
+# ─────────────────────────────────────────────
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: jetbrainstoolbox
+      directives:
+        description: Install JetBrains Toolbox
+        allowPrerelease: true
+      settings:
+        id: JetBrains.Toolbox
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: unigetui
+      directives:
+        description: Install UniGetUI
+        allowPrerelease: true
+      settings:
+        id: MartiCliment.UniGetUI
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: linqpad
+      directives:
+        description: Install LINQPad 8
+        allowPrerelease: true
+      settings:
+        id: LINQPad.LINQPad.8
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: azurecli
+      directives:
+        description: Install Azure CLI
+        allowPrerelease: true
+      settings:
+        id: Microsoft.AzureCLI
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: azd
+      directives:
+        description: Install Azure Developer CLI
+        allowPrerelease: true
+      settings:
+        id: Microsoft.Azd
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: postman
+      directives:
+        description: Install Postman
+        allowPrerelease: true
+      settings:
+        id: Postman.Postman
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: obsidian
+      directives:
+        description: Install Obsidian
+        allowPrerelease: true
+      settings:
+        id: Obsidian.Obsidian
+        source: winget
+
+# ─────────────────────────────────────────────
+# Daily Apps
+# ─────────────────────────────────────────────
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: chrome
+      directives:
+        description: Install Google Chrome
+        allowPrerelease: true
+      settings:
+        id: Google.Chrome
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: slack
+      directives:
+        description: Install Slack
+        allowPrerelease: true
+      settings:
+        id: SlackTechnologies.Slack
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: quicklook
+      directives:
+        description: Install QuickLook
+        allowPrerelease: true
+      settings:
+        id: QL-Win.QuickLook
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: powertoys
+      directives:
+        description: Install PowerToys
+        allowPrerelease: true
+      settings:
+        id: Microsoft.PowerToys
+        source: winget
+
+# ─────────────────────────────────────────────
+# Windows Settings
+# ─────────────────────────────────────────────
+    - resource: Microsoft.Windows.Developer/WindowsExplorer
+      directives:
+        description: Show file extensions in Explorer
+        allowPrerelease: true
+      settings:
+        FileExtensions: Show
+
+    - resource: Microsoft.Windows.Developer/Taskbar
+      directives:
+        description: Hide widgets from taskbar
+        allowPrerelease: true
+      settings:
+        WidgetsButton: Hide
+
+# ─────────────────────────────────────────────
+# Bloatware Removal
+# ─────────────────────────────────────────────
+    - resource: PSDscResources/Script
+      id: RemoveBloatware
+      directives:
+        description: Remove selected built-in UWP apps
+        allowPrerelease: true
+      settings:
+        GetScript: |
+          @{ Result = $true }
+        TestScript: |
+          $packages = @(
+            'Disney.37853FC22B2CE',
+            'Microsoft.BingNews',
+            'Microsoft.GetHelp',
+            'Microsoft.Getstarted',
+            'Microsoft.MicrosoftSolitaireCollection',
+            'Microsoft.MicrosoftOfficeHub',
+            'Microsoft.WindowsFeedbackHub',
+            'SpotifyAB.SpotifyMusic',
+            'TeamViewer.TeamViewer.Host'
+          )
+          $found = $packages | Where-Object { Get-AppxPackage -Name $_ -ErrorAction SilentlyContinue }
+          return ($found.Count -eq 0)
+        SetScript: |
+          $packages = @(
+            'Disney.37853FC22B2CE',
+            'Microsoft.BingNews',
+            'Microsoft.GetHelp',
+            'Microsoft.Getstarted',
+            'Microsoft.MicrosoftSolitaireCollection',
+            'Microsoft.MicrosoftOfficeHub',
+            'Microsoft.WindowsFeedbackHub',
+            'SpotifyAB.SpotifyMusic',
+            'TeamViewer.TeamViewer.Host'
+          )
+          foreach ($name in $packages) {
+            Get-AppxPackage -Name $name -ErrorAction SilentlyContinue |
+              Remove-AppxPackage -ErrorAction SilentlyContinue
+          }
+
+# ─────────────────────────────────────────────
+# Security and System Settings
+# ─────────────────────────────────────────────
+    - resource: PSDscResources/Script
+      id: SecuritySettings
+      directives:
+        description: Enable PUA protection and harden system settings
+        allowPrerelease: true
+      settings:
+        GetScript: |
+          @{ Result = (Get-MpPreference).PUAProtection -eq 1 }
+        TestScript: |
+          try {
+            $pua = (Get-MpPreference).PUAProtection -eq 1
+            $autoplay = (Get-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers' -Name 'DisableAutoplay' -ErrorAction SilentlyContinue).DisableAutoplay -eq 1
+            $autorun = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer' -Name 'NoDriveTypeAutoRun' -ErrorAction SilentlyContinue).NoDriveTypeAutoRun -eq 255
+            $delopt = (Get-ItemProperty -Path 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization' -Name 'DODownloadMode' -ErrorAction SilentlyContinue).DODownloadMode -eq 100
+            return ($pua -and $autoplay -and $autorun -and $delopt)
+          } catch { return $false }
+        SetScript: |
+          # PUA protection
+          Set-MpPreference -PUAProtection 1
+
+          # Disable autoplay
+          $apPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\AutoplayHandlers'
+          if (-not (Test-Path $apPath)) { New-Item -Path $apPath -Force | Out-Null }
+          New-ItemProperty -Path $apPath -Name 'DisableAutoplay' -PropertyType DWord -Value 1 -Force | Out-Null
+
+          # Disable autorun
+          $arPath = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer'
+          if (-not (Test-Path $arPath)) { New-Item -Path $arPath -Force | Out-Null }
+          New-ItemProperty -Path $arPath -Name 'NoDriveTypeAutoRun' -PropertyType DWord -Value 255 -Force | Out-Null
+
+          # Disable delivery optimization
+          $doPath = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization'
+          if (-not (Test-Path $doPath)) { New-Item -Path $doPath -Force | Out-Null }
+          New-ItemProperty -Path $doPath -Name 'DODownloadMode' -PropertyType DWord -Value 100 -Force | Out-Null
+
+# ─────────────────────────────────────────────
+# GitHub folder structure
+# ─────────────────────────────────────────────
+    - resource: PSDscResources/Script
+      id: CreateGitHubFolder
+      dependsOn:
+        - DevDrive
+        - git
+      directives:
+        description: Create D:\github folder
+        allowPrerelease: true
+      settings:
+        GetScript: |
+          @{ Result = Test-Path 'D:\github' }
+        TestScript: |
+          Test-Path 'D:\github'
+        SetScript: |
+          New-Item -Path 'D:\github' -ItemType Directory -Force
+
+# ─────────────────────────────────────────────
+# PowerShell Profile and Oh My Posh Setup
+# ─────────────────────────────────────────────
+    - resource: PSDscResources/Script
+      id: SetupPowerShellProfile
+      dependsOn:
+        - powershell
+        - ohmyposh
+        - windowsterminal
+      directives:
+        description: Setup PowerShell profile and Oh My Posh theme
+        allowPrerelease: true
+      settings:
+        GetScript: |
+          $pwsh7ProfilePath = "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
+          @{ Result = Test-Path $pwsh7ProfilePath }
+        TestScript: |
+          return $false
+        SetScript: |
+          try {
+            $repoBase = "https://raw.githubusercontent.com/codebytes/windows-setup/main"
+
+            # Download Oh My Posh theme
+            $ompThemePath = "$env:USERPROFILE\codebytes.$env:COMPUTERNAME.omp.json"
+            Invoke-WebRequest -Uri "$repoBase/codebytes.omp.json" -OutFile $ompThemePath -UseBasicParsing
+
+            # Setup PowerShell 7 profile
+            $pwsh7ProfileDir = "$env:USERPROFILE\Documents\PowerShell"
+            if (!(Test-Path $pwsh7ProfileDir)) {
+              New-Item -Path $pwsh7ProfileDir -ItemType Directory -Force | Out-Null
+            }
+            $profileContent = @"
+          # codebytes PowerShell Profile
+          # Generated by windows-setup DSC configuration
+          Import-Module -Name Terminal-Icons -ErrorAction SilentlyContinue
+          Import-Module -Name z -ErrorAction SilentlyContinue
+
+          `$ompTheme = "`$env:USERPROFILE\codebytes.`$env:COMPUTERNAME.omp.json"
+          if (Test-Path `$ompTheme) {
+            oh-my-posh init pwsh --config `$ompTheme | Invoke-Expression
+          }
+          "@
+            $profileContent | Out-File -FilePath "$pwsh7ProfileDir\Microsoft.PowerShell_profile.ps1" -Encoding UTF8 -Force
+
+            # Copy to Windows PowerShell 5.1 profile too
+            $winPSProfileDir = "$env:USERPROFILE\Documents\WindowsPowerShell"
+            if (!(Test-Path $winPSProfileDir)) {
+              New-Item -Path $winPSProfileDir -ItemType Directory -Force | Out-Null
+            }
+            $profileContent | Out-File -FilePath "$winPSProfileDir\Microsoft.PowerShell_profile.ps1" -Encoding UTF8 -Force
+
+            # Install PowerShell modules
+            $pwsh7Path = "$env:ProgramFiles\PowerShell\7\pwsh.exe"
+            if (Test-Path $pwsh7Path) {
+              & $pwsh7Path -NoProfile -ExecutionPolicy Bypass -Command {
+                Install-PSResource -Name Terminal-Icons -TrustRepository -Scope CurrentUser -Quiet -ErrorAction SilentlyContinue
+                Install-PSResource -Name z -TrustRepository -Scope CurrentUser -Quiet -ErrorAction SilentlyContinue
+              }
+            }
+
+            # Install CascadiaCode Nerd Font
+            & oh-my-posh font install CascadiaCode
+
+            # Configure Windows Terminal to use the font
+            $wtSettingsPath = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
+            if (Test-Path $wtSettingsPath) {
+              $settings = Get-Content $wtSettingsPath -Raw | ConvertFrom-Json
+              if (-not $settings.profiles.defaults) {
+                $settings.profiles | Add-Member -NotePropertyName "defaults" -NotePropertyValue @{} -Force
+              }
+              $settings.profiles.defaults | Add-Member -NotePropertyName "font" -NotePropertyValue @{ face = "CaskaydiaCove NF" } -Force
+              $settings | ConvertTo-Json -Depth 10 | Set-Content $wtSettingsPath
+            }
+          } catch {
+            Write-Error "Error in SetupPowerShellProfile: $_"
+            throw
+          }
+
+# ─────────────────────────────────────────────
+# Nerd Font (standalone, if OMP is already present)
+# ─────────────────────────────────────────────
+    - resource: PSDscResources/Script
+      id: InstallNerdFont
+      dependsOn:
+        - ohmyposh
+      directives:
+        description: Install Meslo Nerd Font via Oh My Posh
+        allowPrerelease: true
+      settings:
+        GetScript: |
+          @{ Result = $false }
+        TestScript: |
+          # Check if Meslo font is already installed
+          $fonts = (New-Object System.Drawing.Text.InstalledFontCollection).Families.Name
+          return ($fonts -contains 'MesloLGM Nerd Font')
+        SetScript: |
+          & oh-my-posh font install meslo
