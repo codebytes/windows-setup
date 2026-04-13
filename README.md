@@ -1,47 +1,40 @@
 # Windows 11 Setup Scripts
 
-Declarative Windows 11 machine setup using [WinGet DSC](https://learn.microsoft.com/en-us/windows/package-manager/configuration/) (Desired State Configuration). Inspired by [Scott Hanselman's wingetdevsetup](https://github.com/shanselman/wingetdevsetup).
+[![Windows 11](https://img.shields.io/badge/Windows-11-0078D4?logo=windows11)](https://www.microsoft.com/windows/windows-11)
+[![WinGet DSC](https://img.shields.io/badge/WinGet-DSC-blue)](https://learn.microsoft.com/en-us/windows/package-manager/configuration/)
+
+Declarative Windows 11 machine setup using [WinGet DSC](https://learn.microsoft.com/en-us/windows/package-manager/configuration/) (Desired State Configuration). One command to go from a fresh Windows install to a fully configured dev machine.
+
+Inspired by [Scott Hanselman's wingetdevsetup](https://github.com/shanselman/wingetdevsetup).
 
 ## Quick Start
 
-### One-command install (recommended)
+### Remote — one command from a fresh machine
 
-Open PowerShell as Administrator and run:
+Open **PowerShell** and paste:
 
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; $script = Join-Path $env:TEMP 'windows-setup-boot.ps1'; irm 'https://raw.githubusercontent.com/codebytes/windows-setup/main/boot.ps1' | Set-Content -Path $script -Encoding UTF8; & $script
 ```
 
-### Backward-compatible one-liner
+> The script self-elevates to Administrator — you'll see a UAC prompt if you're not already elevated.
 
-The original `script.ps1` URL still works — it delegates to `boot.ps1`:
+### Local — from a cloned repo
 
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; $script = Join-Path $env:TEMP 'windows-setup.ps1'; irm 'https://raw.githubusercontent.com/codebytes/windows-setup/main/script.ps1' | Set-Content -Path $script -Encoding UTF8; & $script
+git clone https://github.com/codebytes/windows-setup.git
+cd windows-setup
+.\boot.ps1
 ```
 
-## How It Works
+## What Gets Installed
 
-The setup uses **WinGet DSC** — a declarative YAML configuration that describes the desired state of your machine. WinGet handles the idempotent install/configure logic.
+The DSC configuration (`codebytes.dev.dsc.yml`) sets up everything in one pass:
 
-### `boot.ps1`
-
-The bootstrapper script that:
-
-1. Self-elevates to Administrator
-2. Ensures WinGet is installed and up to date (using `Repair-WinGetPackageManager` with manual fallback)
-3. Enables `winget configure`
-4. Runs the DSC configuration from `codebytes.dev.dsc.yml`
-5. Shows next steps
-
-### `codebytes.dev.dsc.yml`
-
-The declarative configuration that installs and configures everything:
-
-| Category | Tools |
+| Category | What's included |
 |---|---|
 | **Git & GitHub** | Git, GitHub CLI, GitHub Desktop, GitHub Copilot CLI |
-| **Editors** | VS Code, Visual Studio Community 2022 (+ .vsconfig workloads) |
+| **Editors** | VS Code, Visual Studio Community 2022 (with [.vsconfig](.vsconfig) workloads) |
 | **Runtimes & SDKs** | .NET 8, .NET 9, Python 3.12, Node.js |
 | **Containers** | Docker Desktop |
 | **Terminal & Shell** | Windows Terminal, PowerShell 7, Oh My Posh |
@@ -50,41 +43,57 @@ The declarative configuration that installs and configures everything:
 | **Daily Apps** | Google Chrome, Slack, QuickLook, PowerToys |
 | **Windows Settings** | Show file extensions, hide taskbar widgets |
 | **Security** | PUA protection, disable autoplay/autorun/delivery optimization |
-| **Personalization** | Dev Drive (D:), PowerShell profile, Oh My Posh theme, Nerd Fonts |
+| **Personalization** | Dev Drive on D:, Oh My Posh theme, CascadiaCode + Meslo Nerd Fonts, PowerShell profile |
 
-### Post-Setup
+## How It Works
 
-After the DSC configuration completes:
+```
+boot.ps1                          ← you run this
+  ├─ Self-elevates to Admin
+  ├─ Installs / repairs WinGet
+  ├─ Enables winget configure
+  └─ Runs: winget configuration -f codebytes.dev.dsc.yml
+                                    ↑
+                        Declarative YAML that WinGet
+                        processes resource-by-resource
+```
+
+**WinGet DSC** is a declarative configuration engine built into WinGet. You describe the desired state of your machine in YAML, and WinGet makes it so — installing packages, applying settings, and running scripts as needed. Resources that are already in the desired state are skipped automatically.
+
+## After Setup
+
+When the DSC run completes, `boot.ps1` prints these next steps:
 
 ```powershell
 # 1. Authenticate with GitHub
 gh auth login
 
-# 2. Clone your repos
+# 2. Clone your repos to D:\github (or ~/source/repos if no Dev Drive)
 .\clone-repos.ps1
 
-# 3. Restart your computer
+# 3. Restart to finish WSL, Visual Studio, and other pending installs
 Restart-Computer
 ```
 
 ## Repository Structure
 
 ```
-├── boot.ps1                  # Main bootstrapper (admin elevation + WinGet + DSC)
-├── codebytes.dev.dsc.yml     # Declarative DSC configuration (all packages + settings)
-├── codebytes.omp.json        # Oh My Posh theme
-├── clone-repos.ps1           # Clone personal repos after gh auth
-├── .vsconfig                 # Visual Studio workload configuration
-├── script.ps1                # Backward-compat wrapper → boot.ps1
-├── install-dev-tools.ps1     # Backward-compat wrapper → boot.ps1
+├── boot.ps1                  # Bootstrapper: admin elevation → WinGet repair → DSC run
+├── codebytes.dev.dsc.yml     # Declarative DSC config (packages, settings, scripts)
+├── codebytes.omp.json        # Oh My Posh prompt theme
+├── clone-repos.ps1           # Clone personal GitHub repos via gh CLI
+├── .vsconfig                 # Visual Studio workload/component selection
+├── script.ps1                # Backward-compat wrapper (delegates to boot.ps1)
+├── install-dev-tools.ps1     # Backward-compat wrapper (delegates to boot.ps1)
 └── README.md
 ```
 
 ## Customizing
 
-### Adding packages
+### Add a package
 
-Add a new `WinGetPackage` resource to `codebytes.dev.dsc.yml`:
+1. Find the winget ID: `winget search "App Name"`
+2. Add a block to `codebytes.dev.dsc.yml`:
 
 ```yaml
     - resource: Microsoft.WinGet.DSC/WinGetPackage
@@ -97,39 +106,66 @@ Add a new `WinGetPackage` resource to `codebytes.dev.dsc.yml`:
         source: winget
 ```
 
-Find the winget package ID with `winget search "App Name"`.
+### Remove a package
 
-### Adding repos to clone
+Delete its resource block from `codebytes.dev.dsc.yml`.
 
-Edit the `$repos` array in `clone-repos.ps1`.
+### Change Visual Studio workloads
 
-### Changing the Oh My Posh theme
+Edit [`.vsconfig`](.vsconfig) — the DSC configuration applies it after VS installs. You can export your current workloads from the VS Installer → More → Export configuration.
 
-Edit `codebytes.omp.json` — the DSC configuration downloads it during setup.
+### Change the Oh My Posh theme
 
-### Changing Visual Studio workloads
+Edit [`codebytes.omp.json`](codebytes.omp.json). The DSC profile setup downloads it at `$HOME/codebytes.$COMPUTERNAME.omp.json` during setup.
 
-Edit `.vsconfig` — the DSC configuration applies it after VS installs.
+### Change which repos get cloned
 
-### Removing bloatware
+Edit the `$repos` array in [`clone-repos.ps1`](clone-repos.ps1).
 
-Edit the package list in the `RemoveBloatware` script block inside `codebytes.dev.dsc.yml`.
+### Change bloatware removal list
 
-## Local Usage
+Edit the package names in the `RemoveBloatware` script block inside `codebytes.dev.dsc.yml`. To list installed UWP apps:
 
 ```powershell
-# Run the full setup
-.\boot.ps1
-
-# Or use the backward-compat entrypoints
-.\script.ps1
-.\install-dev-tools.ps1
+Get-AppxPackage | Select-Object Name | Sort-Object Name
 ```
 
-## Notes
+## Backward Compatibility
 
-- **Windows 11 only** — uses Windows-specific PowerShell cmdlets and WinGet DSC
-- **Administrator required** — `boot.ps1` self-elevates automatically
-- **WinGet required** — if missing, the bootstrapper installs it automatically
-- **Dev Drive** — creates a 50 GB ReFS Dev Drive on D: (only if D: doesn't already exist)
-- **Idempotent** — safe to re-run; WinGet DSC skips already-installed packages
+The original one-liner URLs still work. Both `script.ps1` and `install-dev-tools.ps1` now delegate to `boot.ps1`:
+
+```powershell
+# These still work — they fetch and run boot.ps1 under the hood
+Set-ExecutionPolicy Bypass -Scope Process -Force; $script = Join-Path $env:TEMP 'windows-setup.ps1'; irm 'https://raw.githubusercontent.com/codebytes/windows-setup/main/script.ps1' | Set-Content -Path $script -Encoding UTF8; & $script
+```
+
+## Requirements
+
+| Requirement | Details |
+|---|---|
+| **OS** | Windows 11 |
+| **PowerShell** | 5.1+ (built in) |
+| **Admin** | Script self-elevates via UAC |
+| **WinGet** | Installed/repaired automatically by `boot.ps1` |
+| **Internet** | Required for package downloads and DSC config fetch |
+
+## Dev Drive
+
+The DSC configuration creates a 50 GB [Dev Drive](https://learn.microsoft.com/en-us/windows/dev-drive/) on **D:** using ReFS. This is a performance-optimized volume for developer workloads.
+
+- If D: already exists, the Dev Drive step is skipped (non-destructive)
+- `clone-repos.ps1` clones to `D:\github` when available, otherwise falls back to `~/source/repos`
+
+## FAQ
+
+**Can I re-run it safely?**
+Yes. WinGet DSC is idempotent — already-installed packages and applied settings are skipped.
+
+**What if I don't want everything?**
+Fork the repo and remove resource blocks from `codebytes.dev.dsc.yml`. Each block is self-contained.
+
+**What if WinGet isn't installed?**
+`boot.ps1` handles this automatically using `Repair-WinGetPackageManager`, with a manual fallback that downloads the required dependencies.
+
+**How long does it take?**
+15–30 minutes on a fresh machine depending on internet speed. Re-runs are much faster since most packages get skipped.
