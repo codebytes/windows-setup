@@ -5,24 +5,43 @@ properties:
   resources:
 
 # ─────────────────────────────────────────────
-# Dev Drive (D:, 50 GB, ReFS)
-# Only created when disk 0 has unallocated space and D: does not already exist.
+# Dev Drive (50 GB VHDX at C:\DevDrive\devdrive.vhdx, mounted as D:)
+# Uses a VHD so no physical partition changes are needed.
+# Skipped entirely if D: already exists.
 # ─────────────────────────────────────────────
-    - resource: Disk
+    - resource: PSDscResources/Script
       id: DevDrive
       directives:
-        module: StorageDsc
-        description: 'Create Dev Drive on D:'
+        description: 'Create Dev Drive VHD on D:'
         allowPrerelease: true
       settings:
-        DiskId: '0'
-        DiskIdType: 'Number'
-        DriveLetter: 'D'
-        FSLabel: 'Dev Drive'
-        DevDrive: true
-        AllowDestructive: false
-        FSFormat: 'ReFS'
-        Size: '50Gb'
+        GetScript: |
+          @{ Result = Test-Path 'D:\' }
+        TestScript: |
+          # Skip if D: is already available
+          return (Test-Path 'D:\')
+        SetScript: |
+          $vhdDir = 'C:\DevDrive'
+          $vhdPath = Join-Path $vhdDir 'devdrive.vhdx'
+          $sizeBytes = 50GB
+
+          if (!(Test-Path $vhdDir)) {
+            New-Item -Path $vhdDir -ItemType Directory -Force | Out-Null
+          }
+
+          Write-Host "Creating Dev Drive VHDX at $vhdPath..."
+          $vhd = New-VHD -Path $vhdPath -Dynamic -SizeBytes $sizeBytes
+          $disk = $vhd | Mount-VHD -Passthru
+          $init = $disk | Initialize-Disk -Passthru
+          $part = $init | New-Partition -DriveLetter D -UseMaximumSize
+          $part | Format-Volume -DevDrive -FileSystem ReFS -NewFileSystemLabel 'Dev Drive' -Confirm:$false -Force
+
+          # Auto-mount on boot via Task Scheduler
+          $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -Command `"Mount-VHD -Path '$vhdPath'`""
+          $trigger = New-ScheduledTaskTrigger -AtStartup
+          $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
+          Register-ScheduledTask -TaskName 'Mount Dev Drive' -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
+          Write-Host "Dev Drive created and configured to auto-mount at D:\"
 
 # ─────────────────────────────────────────────
 # Git and GitHub tools
