@@ -31,7 +31,7 @@ $mainFunction = {
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "winget configure --enable returned exit code $LASTEXITCODE. Proceeding anyway..."
         }
-        winget configuration -f $dscDevUri --accept-configuration-agreements
+        winget configure -f $dscDevUri --accept-configuration-agreements
         Write-Host "Done: codebytes Dev Machine Setup" -ForegroundColor Green
 
         Write-Host ""
