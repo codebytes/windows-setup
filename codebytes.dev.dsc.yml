@@ -101,10 +101,10 @@ properties:
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: visualstudio
       directives:
-        description: Install Visual Studio Community 2022
+        description: Install Visual Studio Enterprise 2026
         allowPrerelease: true
       settings:
-        id: Microsoft.VisualStudio.2022.Community
+        id: Microsoft.VisualStudio.2026.Enterprise
         source: winget
 
     - resource: PSDscResources/Script
