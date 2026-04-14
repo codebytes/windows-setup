@@ -280,6 +280,33 @@ properties:
         id: Microsoft.Azd
         source: winget
 
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: foundrylocal
+      directives:
+        description: Install Foundry Local
+        allowPrerelease: true
+      settings:
+        id: Microsoft.FoundryLocal
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: ollama
+      directives:
+        description: Install Ollama
+        allowPrerelease: true
+      settings:
+        id: Ollama.Ollama
+        source: winget
+
+    - resource: Microsoft.WinGet.DSC/WinGetPackage
+      id: kustoexplorer
+      directives:
+        description: Install Kusto Explorer
+        allowPrerelease: true
+      settings:
+        id: Microsoft.Azure.KustoExplorer
+        source: winget
+
 # ─────────────────────────────────────────────
 # Daily Apps
 # ─────────────────────────────────────────────
