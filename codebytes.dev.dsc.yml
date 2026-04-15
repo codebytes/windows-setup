@@ -97,10 +97,10 @@ properties:
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: visualstudio
       directives:
-        description: Install Visual Studio Enterprise 2026
+        description: Install Visual Studio Enterprise
         allowPrerelease: true
       settings:
-        id: Microsoft.VisualStudio.2026.Enterprise
+        id: Microsoft.VisualStudio.Enterprise
         source: winget
 
     - resource: PSDscResources/Script
@@ -246,7 +246,7 @@ properties:
         description: Install UniGetUI
         allowPrerelease: true
       settings:
-        id: MartiCliment.UniGetUI
+        id: Devolutions.UniGetUI
         source: winget
 
     - resource: Microsoft.WinGet.DSC/WinGetPackage
@@ -297,10 +297,10 @@ properties:
     - resource: Microsoft.WinGet.DSC/WinGetPackage
       id: kustoexplorer
       directives:
-        description: Install Kusto Explorer
+        description: Install Kusto Terminal
         allowPrerelease: true
       settings:
-        id: Microsoft.Azure.KustoExplorer
+        id: basaba.KustoTerminal
         source: winget
 
 # ─────────────────────────────────────────────
@@ -364,7 +364,7 @@ properties:
             'SpotifyAB.SpotifyMusic',
             'TeamViewer.TeamViewer.Host'
           )
-          $found = $packages | Where-Object { Get-AppxPackage -Name $_ -ErrorAction SilentlyContinue }
+          $found = @($packages | Where-Object { Get-AppxPackage -Name $_ -ErrorAction SilentlyContinue })
           return ($found.Count -eq 0)
         SetScript: |
           $packages = @(
