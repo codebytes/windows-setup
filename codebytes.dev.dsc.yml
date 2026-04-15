@@ -5,7 +5,7 @@ properties:
   resources:
 
 # ─────────────────────────────────────────────
-# Dev Drive (50 GB VHDX at C:\DevDrive\devdrive.vhdx, mounted as D:)
+# Dev Drive (50 GB VHDX at C:\Users\Public\devdrive.vhdx, mounted as D:)
 # Uses a VHD so no physical partition changes are needed.
 # Skipped entirely if D: already exists.
 # ─────────────────────────────────────────────
@@ -21,13 +21,9 @@ properties:
           # Skip if D: is already available
           return (Test-Path 'D:\')
         SetScript: |
-          $vhdDir = 'C:\DevDrive'
+          $vhdDir = 'C:\Users\Public'
           $vhdPath = Join-Path $vhdDir 'devdrive.vhdx'
           $sizeBytes = 50GB
-
-          if (!(Test-Path $vhdDir)) {
-            New-Item -Path $vhdDir -ItemType Directory -Force | Out-Null
-          }
 
           Write-Host "Creating Dev Drive VHDX at $vhdPath..."
           $vhd = New-VHD -Path $vhdPath -Dynamic -SizeBytes $sizeBytes
