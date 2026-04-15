@@ -294,14 +294,19 @@ properties:
         id: Ollama.Ollama
         source: winget
 
-    - resource: Microsoft.WinGet.DSC/WinGetPackage
+    - resource: PSDscResources/Script
       id: kustoexplorer
       directives:
-        description: Install Kusto Terminal
+        description: Install Kusto Explorer via ClickOnce
         allowPrerelease: true
       settings:
-        id: basaba.KustoTerminal
-        source: winget
+        GetScript: |
+          @{ Result = Test-Path "$env:LOCALAPPDATA\Microsoft\Windows\Start Menu\Programs\Kusto Explorer" }
+        TestScript: |
+          # Check if Kusto Explorer shortcut exists (ClickOnce installs create start menu entries)
+          Test-Path "$env:LOCALAPPDATA\Microsoft\Windows\Start Menu\Programs\Kusto Explorer"
+        SetScript: |
+          Start-Process 'rundll32.exe' -ArgumentList 'dfshim.dll,ShOpenVerbApplication https://aka.ms/kustoexplorer' -Wait
 
 # ─────────────────────────────────────────────
 # Daily Apps
