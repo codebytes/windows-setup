@@ -459,7 +459,10 @@ properties:
         allowPrerelease: true
       settings:
         GetScript: |
-          $pwsh7ProfilePath = "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
+          $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+          $pwsh7ProfilePath = if ($pwsh) {
+            & $pwsh.Source -NoProfile -Command '$PROFILE'
+          } else { "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1" }
           @{ Result = Test-Path $pwsh7ProfilePath }
         TestScript: |
           return $false
@@ -471,8 +474,12 @@ properties:
             $ompThemePath = "$env:USERPROFILE\codebytes.$env:COMPUTERNAME.omp.json"
             Invoke-WebRequest -Uri "$repoBase/codebytes.omp.json" -OutFile $ompThemePath -UseBasicParsing
 
-            # Setup PowerShell 7 profile
-            $pwsh7ProfileDir = "$env:USERPROFILE\Documents\PowerShell"
+            # Resolve actual profile paths (handles OneDrive folder redirection)
+            $pwsh = Get-Command pwsh -ErrorAction SilentlyContinue
+            $pwsh7ProfilePath = if ($pwsh) {
+              & $pwsh.Source -NoProfile -Command '$PROFILE'
+            } else { "$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1" }
+            $pwsh7ProfileDir = Split-Path $pwsh7ProfilePath
             if (!(Test-Path $pwsh7ProfileDir)) {
               New-Item -Path $pwsh7ProfileDir -ItemType Directory -Force | Out-Null
             }
@@ -487,14 +494,15 @@ properties:
             oh-my-posh init pwsh --config `$ompTheme | Invoke-Expression
           }
           "@
-            $profileContent | Out-File -FilePath "$pwsh7ProfileDir\Microsoft.PowerShell_profile.ps1" -Encoding UTF8 -Force
+            $profileContent | Out-File -FilePath $pwsh7ProfilePath -Encoding UTF8 -Force
 
             # Copy to Windows PowerShell 5.1 profile too
-            $winPSProfileDir = "$env:USERPROFILE\Documents\WindowsPowerShell"
+            $winPSProfilePath = $pwsh7ProfilePath -replace '\\PowerShell\\', '\WindowsPowerShell\'
+            $winPSProfileDir = Split-Path $winPSProfilePath
             if (!(Test-Path $winPSProfileDir)) {
               New-Item -Path $winPSProfileDir -ItemType Directory -Force | Out-Null
             }
-            $profileContent | Out-File -FilePath "$winPSProfileDir\Microsoft.PowerShell_profile.ps1" -Encoding UTF8 -Force
+            $profileContent | Out-File -FilePath $winPSProfilePath -Encoding UTF8 -Force
 
             # Install PowerShell modules
             $pwsh7Path = "$env:ProgramFiles\PowerShell\7\pwsh.exe"
