@@ -114,7 +114,7 @@ Edit [`.vsconfig`](.vsconfig) — the DSC configuration applies it after VS inst
 
 ### Change the Oh My Posh theme
 
-Edit [`codebytes.omp.json`](codebytes.omp.json). The DSC profile setup downloads it at `$HOME/codebytes.$COMPUTERNAME.omp.json` during setup.
+Edit [`codebytes.omp.json`](codebytes.omp.json). The DSC profile setup downloads it to `<Documents>/PowerShell/codebytes.omp.json` — a single shared theme used on every machine (synced via OneDrive/Known Folder Move) rather than a per-machine copy.
 
 ### Change which repos get cloned
 
