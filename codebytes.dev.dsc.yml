@@ -120,8 +120,15 @@ properties:
           $vsConfigPath = "$env:TEMP\.vsconfig"
           Invoke-WebRequest -Uri $vsConfigUrl -OutFile $vsConfigPath
           $vsInstallerPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
-          if (Test-Path $vsInstallerPath) {
-            & $vsInstallerPath modify --installPath "${env:ProgramFiles}\Microsoft Visual Studio\2022\Community" --config $vsConfigPath --quiet
+          $vsWherePath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if ((Test-Path $vsInstallerPath) -and (Test-Path $vsWherePath)) {
+            # Resolve the real install path so workloads target the installed edition/year (e.g. Enterprise), not a hardcoded path
+            $vsInstallPath = & $vsWherePath -latest -property installationPath
+            if ($vsInstallPath) {
+              & $vsInstallerPath modify --installPath $vsInstallPath --config $vsConfigPath --quiet --norestart
+            } else {
+              Write-Host "vswhere did not return a Visual Studio installation path; skipping workload configuration."
+            }
           }
 
 # ─────────────────────────────────────────────

@@ -34,13 +34,14 @@ The DSC configuration (`codebytes.dev.dsc.yml`) sets up everything in one pass:
 | Category | What's included |
 |---|---|
 | **Git & GitHub** | Git, GitHub CLI, GitHub Desktop, GitHub Copilot CLI |
-| **Editors** | VS Code, Visual Studio Community 2022 (with [.vsconfig](.vsconfig) workloads) |
-| **Runtimes & SDKs** | .NET 8, .NET 9, Python 3.12, Node.js |
+| **Editors** | VS Code, Visual Studio Enterprise (with [.vsconfig](.vsconfig) workloads) |
+| **Runtimes & SDKs** | .NET 8, .NET 9, .NET 10, Python 3.12, Node.js |
 | **Containers** | Docker Desktop |
 | **Terminal & Shell** | Windows Terminal, PowerShell 7, Oh My Posh |
 | **WSL** | WSL + Ubuntu 24.04 |
-| **Dev Tools** | JetBrains Toolbox, UniGetUI, LINQPad 8, Azure CLI, Azure Developer CLI, Postman, Obsidian |
-| **Daily Apps** | Google Chrome, Slack, QuickLook, PowerToys |
+| **AI / Local Models** | Foundry Local, Ollama |
+| **Dev Tools** | UniGetUI, LINQPad 8, Azure CLI, Azure Developer CLI, Kusto Explorer |
+| **Daily Apps** | Google Chrome, PowerToys |
 | **Windows Settings** | Show file extensions, hide taskbar widgets |
 | **Security** | PUA protection, disable autoplay/autorun/delivery optimization |
 | **Personalization** | Dev Drive on D:, Oh My Posh theme, CascadiaCode + Meslo Nerd Fonts, PowerShell profile |
